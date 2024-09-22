@@ -1,0 +1,46 @@
+services:
+  eureka-service:
+    image: eureka-service
+    build:
+      context: ./eureka-service/eureka-service
+      dockerfile: Dockerfile
+    ports:
+      - "8761:8761"
+    networks:
+      - eureka-network
+    restart: unless-stopped
+
+  appq1-service:
+    image: appq1-service
+    build:
+      context: ./app_q1
+      dockerfile: Dockerfile
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-service:8761/eureka/
+    depends_on:
+      - eureka-service
+    networks:
+      - eureka-network
+    restart: unless-stopped
+    deploy:
+      replicas: 5
+
+  gateway-service:
+    image: gateway-service
+    build:
+      context: ./gateway-service/gateway-service
+      dockerfile: Dockerfile
+    environment:
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka-service:8761/eureka/
+    depends_on:
+      - eureka-service
+      - appq1-service
+    ports:
+      - "9999:9999"
+    networks:
+      - eureka-network
+    restart: unless-stopped
+
+networks:
+  eureka-network:
+    driver: bridge
